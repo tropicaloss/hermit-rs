@@ -1,12 +1,11 @@
 use clap::Parser;
 use log::LevelFilter;
-use std::path::PathBuf;
 
 mod cli;
 mod config;
+mod error;
 mod lockfile;
 mod manager;
-mod error;
 
 #[derive(Parser)]
 #[command(name = "hermit")]
@@ -21,14 +20,9 @@ pub enum Commands {
     /// Install all packages across all managers
     Sync,
     /// Add a package to .hermit
-    Add {
-        package: String,
-        version: String,
-    },
+    Add { package: String, version: String },
     /// Remove a package from .hermit
-    Remove {
-        package: String,
-    },
+    Remove { package: String },
     /// Regenerate hermit.lock without installing
     Lock,
     /// Verify installed versions match hermit.lock
@@ -38,12 +32,10 @@ pub enum Commands {
 }
 
 fn main() {
-    env_logger::builder()
-        .filter_level(LevelFilter::Info)
-        .init();
+    env_logger::builder().filter_level(LevelFilter::Info).init();
 
     let cli = Cli::parse();
-    
+
     if let Err(e) = cli::run(cli.command) {
         error::log_error(e);
         std::process::exit(1);
@@ -53,7 +45,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_cli_parsing() {
         let args = vec!["hermit", "sync"];
