@@ -135,10 +135,9 @@ impl PackageManager {
                 } else {
                     let stderr = String::from_utf8_lossy(&output.stderr);
                     Err(anyhow::anyhow!(format!(
-                        "Failed to install {}: {}\n{} \nExit code: {}",
+                        "Failed to install {}: {}",
                         package,
-                        stderr.trim(),
-                        output.status
+                        stderr.trim()
                     )))
                 }
             }
