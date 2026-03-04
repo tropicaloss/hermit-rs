@@ -106,7 +106,7 @@ fn lock() -> Result<()> {
 
 fn check() -> Result<()> {
     let config = Config::load().context("Failed to load .hermit config")?;
-    let lockfile = Lockfile::load().context("Failed to load hermit.lock")?;
+    let _lockfile = Lockfile::load().context("Failed to load hermit.lock")?;
     let package_manager =
         PackageManager::from_config(&config).context("Failed to create package manager")?;
 
