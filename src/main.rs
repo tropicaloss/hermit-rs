@@ -18,17 +18,44 @@ pub struct Cli {
 #[derive(Parser)]
 pub enum Commands {
     /// Install all packages across all managers
-    Sync,
+    Sync {
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
     /// Add a package to .hermit
-    Add { package: String, version: String },
+    Add {
+        package: String,
+        version: String,
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
     /// Remove a package from .hermit
-    Remove { package: String },
+    Remove {
+        package: String,
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
     /// Regenerate hermit.lock without installing
-    Lock,
+    Lock {
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
     /// Verify installed versions match hermit.lock
-    Check,
+    Check {
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
     /// Remove all hermit-managed installs
-    Clean,
+    Clean {
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
 }
 
 fn main() {
