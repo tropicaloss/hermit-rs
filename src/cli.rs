@@ -1,9 +1,8 @@
 use crate::config::Config;
-use crate::error::Result;
 use crate::lockfile::Lockfile;
 use crate::manager::PackageManager;
 use crate::Commands;
-use anyhow::Context;
+use anyhow::{Context, Result};
 use colored::Colorize;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -34,7 +33,7 @@ fn sync() -> Result<()> {
 
     let pb = indicatif::ProgressBar::new(config.packages.len() as u64);
     pb.set_message("Installing packages...");
-    pb.enable_steady_tick(100);
+    pb.enable_steady_tick(Duration::from_millis(100));
 
     for (package, version) in config.packages.iter() {
         package_manager
@@ -116,7 +115,7 @@ fn check() -> Result<()> {
     let mut all_match = true;
     let pb = indicatif::ProgressBar::new(config.packages.len() as u64);
     pb.set_message("Checking packages...");
-    pb.enable_steady_tick(100);
+    pb.enable_steady_tick(Duration::from_millis(100));
 
     for (package, expected_version) in config.packages.iter() {
         let installed = package_manager.check_installed_version(package, expected_version)?;
