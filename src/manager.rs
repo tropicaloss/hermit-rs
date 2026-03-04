@@ -1,8 +1,7 @@
 use anyhow::Result;
 use colored::Colorize;
 use indicatif::ProgressBar;
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::time::Duration;
 
 pub struct PackageManager {
     pub name: String,
@@ -116,7 +115,7 @@ impl PackageManager {
         );
 
         let pb = ProgressBar::new_spinner();
-        pb.enable_steady_tick(100);
+        pb.enable_steady_tick(Duration::from_millis(100));
         pb.set_message("Installing...");
 
         let output = command.output();
@@ -150,7 +149,7 @@ impl PackageManager {
         package: &str,
         expected_version: &str,
     ) -> Result<bool, anyhow::Error> {
-        let command = match self.manager_type {
+        let mut command = match self.manager_type {
             ManagerType::Bun | ManagerType::Npm | ManagerType::Pnpm => {
                 let mut cmd =
                     std::process::Command::new(if self.manager_type == ManagerType::Bun {
