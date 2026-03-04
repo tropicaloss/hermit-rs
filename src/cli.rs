@@ -1,8 +1,8 @@
-use crate::cli::Commands;
 use crate::config::Config;
 use crate::error::Result;
 use crate::lockfile::Lockfile;
 use crate::manager::PackageManager;
+use crate::Commands;
 use anyhow::Context;
 use std::collections::HashMap;
 use std::path::PathBuf;
