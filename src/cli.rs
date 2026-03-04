@@ -1,7 +1,7 @@
 use crate::cargo::CargoManifest;
 use crate::config::Config;
 use crate::lockfile::Lockfile;
-use crate::manager::{ManagerType, PackageManager};
+use crate::manager::PackageManager;
 use crate::Commands;
 use anyhow::{Context, Result};
 use colored::Colorize;
