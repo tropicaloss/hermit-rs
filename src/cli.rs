@@ -177,24 +177,44 @@ fn lock(verbose: bool) -> Result<()> {
     let config = Config::load().context("Failed to load .hermit config")?;
     let mut lockfile = Lockfile::load().context("Failed to load hermit.lock")?;
 
+    // Handle Cargo specially - read from Cargo.toml
+    let packages: Vec<(String, String)> = if config.manager.to_lowercase() == "cargo" {
+        let cargo_manifest = CargoManifest::load().context("Failed to load Cargo.toml")?;
+        cargo_manifest.get_all_dependencies().into_iter().collect()
+    } else {
+        config.packages.clone().into_iter().collect()
+    };
+
     if verbose {
         println!(
             "{} hermit.lock for {} packages...",
             "Regenerating".green(),
-            config.packages.len()
+            packages.len()
         );
     } else {
         println!("{} hermit.lock...", "Regenerating".green());
     }
 
-    for (package, version) in config.packages.iter() {
+    for (package, version) in packages.iter() {
         if verbose {
             println!("Adding {}@{} to lockfile...", package, version);
         }
+        let resolved_url = if config.manager.to_lowercase() == "cargo" {
+            format!(
+                "https://crates.io/api/v1/crates/{}/{}/download",
+                package, version
+            )
+        } else {
+            format!("https://registry.npmjs.org/{}/-/{}.tgz", package, package)
+        };
         let package_info = super::lockfile::PackageInfo {
             version: version.clone(),
-            resolved: format!("https://registry.npmjs.org/{}/-/{}.tgz", package, package),
-            hash: "sha512-placeholder".to_string(),
+            resolved: resolved_url,
+            hash: if config.manager.to_lowercase() == "cargo" {
+                "sha256-placeholder".to_string()
+            } else {
+                "sha512-placeholder".to_string()
+            },
         };
         lockfile.add_package(package, package_info)?;
     }
@@ -211,22 +231,30 @@ fn check(verbose: bool) -> Result<()> {
     let package_manager =
         PackageManager::from_config(&config).context("Failed to create package manager")?;
 
+    // Handle Cargo specially - read from Cargo.toml
+    let packages: Vec<(String, String)> = if config.manager.to_lowercase() == "cargo" {
+        let cargo_manifest = CargoManifest::load().context("Failed to load Cargo.toml")?;
+        cargo_manifest.get_all_dependencies().into_iter().collect()
+    } else {
+        config.packages.clone().into_iter().collect()
+    };
+
     if verbose {
         println!(
             "{} {} package versions...",
             "Checking".green(),
-            config.packages.len()
+            packages.len()
         );
     } else {
         println!("{} package versions...", "Checking".green());
     }
 
     let mut all_match = true;
-    let pb = indicatif::ProgressBar::new(config.packages.len() as u64);
+    let pb = indicatif::ProgressBar::new(packages.len() as u64);
     pb.set_message("Checking packages...");
     pb.enable_steady_tick(Duration::from_millis(100));
 
-    for (package, expected_version) in config.packages.iter() {
+    for (package, expected_version) in packages.iter() {
         if verbose {
             println!("Checking {}@{}...", package, expected_version);
         }
