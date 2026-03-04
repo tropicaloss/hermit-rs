@@ -53,7 +53,7 @@ impl PackageManager {
     }
 
     pub fn install_package(&self, package: &str, version: &str) -> Result<()> {
-        let command = match self.manager_type {
+        let mut command = match self.manager_type {
             ManagerType::Bun => {
                 let mut cmd = std::process::Command::new("bun");
                 cmd.arg("add").arg(format!("{}@{}", package, version));
