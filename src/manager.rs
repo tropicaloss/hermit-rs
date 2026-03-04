@@ -52,7 +52,7 @@ impl PackageManager {
         })
     }
 
-    pub fn install_package(&self, package: &str, version: &str) -> Result<()> {
+    pub fn install_package(&self, package: &str, version: &str, verbose: bool) -> Result<()> {
         let mut command = match self.manager_type {
             ManagerType::Bun => {
                 let mut cmd = std::process::Command::new("bun");
@@ -106,13 +106,24 @@ impl PackageManager {
             }
         };
 
-        println!(
-            "{} {}@{} using {}...",
-            "Installing".green(),
-            package.blue(),
-            version.blue(),
-            self.name.blue()
-        );
+        if verbose {
+            println!(
+                "{} {}@{} using {} (verbose)...",
+                "Installing".green(),
+                package.blue(),
+                version.blue(),
+                self.name.blue()
+            );
+            println!("Command: {:?}", command);
+        } else {
+            println!(
+                "{} {}@{} using {}...",
+                "Installing".green(),
+                package.blue(),
+                version.blue(),
+                self.name.blue()
+            );
+        }
 
         let pb = ProgressBar::new_spinner();
         pb.enable_steady_tick(Duration::from_millis(100));
@@ -124,12 +135,21 @@ impl PackageManager {
         match output {
             Ok(output) => {
                 if output.status.success() {
-                    println!(
-                        "{} {}@{} installed successfully",
-                        "Successfully installed".green(),
-                        package.blue(),
-                        version.blue()
-                    );
+                    if verbose {
+                        println!(
+                            "{} {}@{} installed successfully (verbose)",
+                            "Successfully installed".green(),
+                            package.blue(),
+                            version.blue()
+                        );
+                    } else {
+                        println!(
+                            "{} {}@{} installed successfully",
+                            "Successfully installed".green(),
+                            package.blue(),
+                            version.blue()
+                        );
+                    }
                     Ok(())
                 } else {
                     let stderr = String::from_utf8_lossy(&output.stderr);

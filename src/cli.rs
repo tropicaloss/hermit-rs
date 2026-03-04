@@ -9,38 +9,54 @@ use std::time::Duration;
 
 pub fn run(command: Commands) -> Result<()> {
     match command {
-        Commands::Sync => sync()?,
-        Commands::Add { package, version } => add_package(package, version)?,
-        Commands::Remove { package } => remove_package(package)?,
-        Commands::Lock => lock()?,
-        Commands::Check => check()?,
-        Commands::Clean => clean()?,
+        Commands::Sync { verbose } => sync(verbose)?,
+        Commands::Add {
+            package,
+            version,
+            verbose,
+        } => add_package(package, version, verbose)?,
+        Commands::Remove { package, verbose } => remove_package(package, verbose)?,
+        Commands::Lock { verbose } => lock(verbose)?,
+        Commands::Check { verbose } => check(verbose)?,
+        Commands::Clean { verbose } => clean(verbose)?,
     }
     Ok(())
 }
 
-fn sync() -> Result<()> {
+fn sync(verbose: bool) -> Result<()> {
     let config = Config::load().context("Failed to load .hermit config")?;
     let mut lockfile = Lockfile::load().context("Failed to load hermit.lock")?;
     let package_manager =
         PackageManager::from_config(&config).context("Failed to create package manager")?;
 
-    println!(
-        "{} packages using {}...",
-        "Syncing".green(),
-        config.manager.blue()
-    );
+    if verbose {
+        println!(
+            "{} {} packages using {}...",
+            "Syncing".green(),
+            config.packages.len(),
+            config.manager.blue()
+        );
+    } else {
+        println!(
+            "{} packages using {}...",
+            "Syncing".green(),
+            config.manager.blue()
+        );
+    }
 
     let pb = indicatif::ProgressBar::new(config.packages.len() as u64);
     pb.set_message("Installing packages...");
     pb.enable_steady_tick(Duration::from_millis(100));
 
     for (package, version) in config.packages.iter() {
+        if verbose {
+            println!("Installing {}@{}...", package, version);
+        }
+
         package_manager
-            .install_package(package, version)
+            .install_package(package, version, verbose)
             .with_context(|| format!("Failed to install package {}@{}", package, version))?;
 
-        // Update lockfile
         let package_info = super::lockfile::PackageInfo {
             version: version.clone(),
             resolved: format!("https://registry.npmjs.org/{}/-/{}.tgz", package, package),
@@ -58,38 +74,66 @@ fn sync() -> Result<()> {
     Ok(())
 }
 
-fn add_package(package: String, version: String) -> Result<()> {
+fn add_package(package: String, version: String, verbose: bool) -> Result<()> {
     let mut config = Config::load().context("Failed to load .hermit config")?;
     config.add_package(&package, &version)?;
     config.save().context("Failed to save .hermit config")?;
 
-    println!(
-        "{} {}@{} to .hermit",
-        "Added".green(),
-        package.blue(),
-        version.blue()
-    );
+    if verbose {
+        println!(
+            "{} {}@{} to .hermit (verbose mode)",
+            "Added".green(),
+            package.blue(),
+            version.blue()
+        );
+    } else {
+        println!(
+            "{} {}@{} to .hermit",
+            "Added".green(),
+            package.blue(),
+            version.blue()
+        );
+    }
 
     Ok(())
 }
 
-fn remove_package(package: String) -> Result<()> {
+fn remove_package(package: String, verbose: bool) -> Result<()> {
     let mut config = Config::load().context("Failed to load .hermit config")?;
     config.remove_package(&package)?;
     config.save().context("Failed to save .hermit config")?;
 
-    println!("{} {} from .hermit", "Removed".green(), package.blue());
+    if verbose {
+        println!(
+            "{} {} from .hermit (verbose mode)",
+            "Removed".green(),
+            package.blue()
+        );
+    } else {
+        println!("{} {} from .hermit", "Removed".green(), package.blue());
+    }
 
     Ok(())
 }
 
-fn lock() -> Result<()> {
+fn lock(verbose: bool) -> Result<()> {
     let config = Config::load().context("Failed to load .hermit config")?;
     let mut lockfile = Lockfile::load().context("Failed to load hermit.lock")?;
 
-    println!("{} hermit.lock...", "Regenerating".green());
+    if verbose {
+        println!(
+            "{} hermit.lock for {} packages...",
+            "Regenerating".green(),
+            config.packages.len()
+        );
+    } else {
+        println!("{} hermit.lock...", "Regenerating".green());
+    }
 
     for (package, version) in config.packages.iter() {
+        if verbose {
+            println!("Adding {}@{} to lockfile...", package, version);
+        }
         let package_info = super::lockfile::PackageInfo {
             version: version.clone(),
             resolved: format!("https://registry.npmjs.org/{}/-/{}.tgz", package, package),
@@ -104,13 +148,21 @@ fn lock() -> Result<()> {
     Ok(())
 }
 
-fn check() -> Result<()> {
+fn check(verbose: bool) -> Result<()> {
     let config = Config::load().context("Failed to load .hermit config")?;
     let _lockfile = Lockfile::load().context("Failed to load hermit.lock")?;
     let package_manager =
         PackageManager::from_config(&config).context("Failed to create package manager")?;
 
-    println!("{} package versions...", "Checking".green());
+    if verbose {
+        println!(
+            "{} {} package versions...",
+            "Checking".green(),
+            config.packages.len()
+        );
+    } else {
+        println!("{} package versions...", "Checking".green());
+    }
 
     let mut all_match = true;
     let pb = indicatif::ProgressBar::new(config.packages.len() as u64);
@@ -118,6 +170,9 @@ fn check() -> Result<()> {
     pb.enable_steady_tick(Duration::from_millis(100));
 
     for (package, expected_version) in config.packages.iter() {
+        if verbose {
+            println!("Checking {}@{}...", package, expected_version);
+        }
         let installed = package_manager.check_installed_version(package, expected_version)?;
         if installed {
             println!(
@@ -148,22 +203,36 @@ fn check() -> Result<()> {
     }
 }
 
-fn clean() -> Result<()> {
-    println!("{} hermit-managed installs...", "Cleaning".yellow());
+fn clean(verbose: bool) -> Result<()> {
+    if verbose {
+        println!(
+            "{} hermit-managed installs (verbose)...",
+            "Cleaning".yellow()
+        );
+    } else {
+        println!("{} hermit-managed installs...", "Cleaning".yellow());
+    }
 
-    // This is a placeholder - actual cleaning would depend on package manager
-    println!(
-        "{} Cleanup implementation needed for each package manager",
-        "Warning".yellow()
-    );
-    println!("1. Remove package directories");
-    println!("2. Clear caches");
-    println!("3. Remove lock files");
+    if verbose {
+        println!("Step 1: Remove package directories");
+        println!("Step 2: Clear caches");
+        println!("Step 3: Remove lock files");
+    } else {
+        println!(
+            "{} Cleanup implementation needed for each package manager",
+            "Warning".yellow()
+        );
+        println!("1. Remove package directories");
+        println!("2. Clear caches");
+        println!("3. Remove lock files");
+    }
 
-    // Remove lock file
     let lockfile_path = PathBuf::from("hermit.lock");
     if lockfile_path.exists() {
         std::fs::remove_file(lockfile_path)?;
+        if verbose {
+            println!("Removed hermit.lock file");
+        }
         println!("{} hermit.lock", "Removed".green());
     }
 
