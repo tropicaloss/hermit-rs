@@ -14,7 +14,7 @@ env_logger = "0.10"
 anyhow = "1.0"
 thiserror = "1.0"
 regex = "1.9"
-indicatif = "0.19"
+indicatif = "0.18.4"
 colored = "2.0"
 
 [dev-dependencies]
