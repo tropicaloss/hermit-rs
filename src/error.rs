@@ -4,7 +4,7 @@ use std::fmt;
 #[derive(Debug)]
 pub struct HermitError {
     kind: HermitErrorKind,
-    source: Option<Box<<dyn Error + 'static>>,
+    source: Option<Box<dyn Error + 'static>>,
 }
 
 #[derive(Debug)]
@@ -57,11 +57,11 @@ impl fmt::Display for HermitError {
             HermitErrorKind::VersionMismatchError => write!(f, "Version mismatch error"),
             HermitErrorKind::CleanupError => write!(f, "Cleanup error"),
         }?;
-        
+
         if let Some(source) = &self.source {
             write!(f, ": {}", source)?;
         }
-        
+
         Ok(())
     }
 }
@@ -75,16 +75,12 @@ impl Error for HermitError {
 pub type Result<T> = std::result::Result<T, HermitError>;
 
 pub fn log_error(err: HermitError) {
-    eprintln!(
-        "{}: {}",
-        "Error".red().bold(),
-        err
-    );
-    
+    eprintln!("{}: {}", "Error".red().bold(), err);
+
     if let Some(source) = err.source() {
         eprintln!("Caused by: {}", source);
     }
-    
+
     match err.kind {
         HermitErrorKind::ConfigError => {
             eprintln!("Check your .hermit configuration file");
@@ -104,7 +100,10 @@ pub fn log_error(err: HermitError) {
         }
         HermitErrorKind::VersionMismatchError => {
             eprintln!("Package versions do not match");
-            eprintln!("Run: {} to install correct versions", "hermit sync".yellow());
+            eprintln!(
+                "Run: {} to install correct versions",
+                "hermit sync".yellow()
+            );
         }
         HermitErrorKind::CleanupError => {
             eprintln!("Cleanup failed");
@@ -126,7 +125,7 @@ mod tests {
                 "file not found",
             ))),
         );
-        
+
         let display = format!("{}", err);
         assert!(display.contains("Configuration error"));
         assert!(display.contains("file not found"));
@@ -136,7 +135,7 @@ mod tests {
     fn test_hermit_error_kind() {
         let err = HermitError::config_error(None);
         assert_eq!(err.kind, HermitErrorKind::ConfigError);
-        
+
         let err = HermitError::package_manager_error(None);
         assert_eq!(err.kind, HermitErrorKind::PackageManagerError);
     }
@@ -150,7 +149,7 @@ mod tests {
                 "permission denied",
             ))),
         );
-        
+
         // This would print to stderr, we just check it doesn't panic
         log_error(err);
     }
