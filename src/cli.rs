@@ -4,8 +4,9 @@ use crate::lockfile::Lockfile;
 use crate::manager::PackageManager;
 use crate::Commands;
 use anyhow::Context;
-use std::collections::HashMap;
+use colored::Colorize;
 use std::path::PathBuf;
+use std::time::Duration;
 
 pub fn run(command: Commands) -> Result<()> {
     match command {
