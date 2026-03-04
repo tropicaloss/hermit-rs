@@ -1,6 +1,7 @@
 use clap::Parser;
 use log::LevelFilter;
 
+mod cargo;
 mod cli;
 mod config;
 mod error;

@@ -1,6 +1,7 @@
+use crate::cargo::CargoManifest;
 use crate::config::Config;
 use crate::lockfile::Lockfile;
-use crate::manager::PackageManager;
+use crate::manager::{ManagerType, PackageManager};
 use crate::Commands;
 use anyhow::{Context, Result};
 use colored::Colorize;
@@ -28,6 +29,12 @@ fn sync(verbose: bool) -> Result<()> {
     let mut lockfile = Lockfile::load().context("Failed to load hermit.lock")?;
     let package_manager =
         PackageManager::from_config(&config).context("Failed to create package manager")?;
+
+    // Handle Cargo specially - sync with Cargo.toml
+    if config.manager.to_lowercase() == "cargo" {
+        sync_cargo(&config, &mut lockfile, verbose)?;
+        return Ok(());
+    }
 
     if verbose {
         println!(
@@ -69,6 +76,56 @@ fn sync(verbose: bool) -> Result<()> {
 
     pb.finish_and_clear();
     println!("{} All packages installed successfully", "Done".green());
+
+    lockfile.save().context("Failed to save hermit.lock")?;
+    Ok(())
+}
+
+fn sync_cargo(config: &Config, lockfile: &mut Lockfile, verbose: bool) -> Result<()> {
+    let cargo_manifest = CargoManifest::load().context("Failed to load Cargo.toml")?;
+    let cargo_deps = cargo_manifest.get_all_dependencies();
+
+    if verbose {
+        println!(
+            "{} {} Rust crates from Cargo.toml...",
+            "Syncing".green(),
+            cargo_deps.len()
+        );
+    } else {
+        println!("{} Rust crates from Cargo.toml...", "Syncing".green());
+    }
+
+    let pb = indicatif::ProgressBar::new(cargo_deps.len() as u64);
+    pb.set_message("Installing crates...");
+    pb.enable_steady_tick(Duration::from_millis(100));
+
+    let package_manager =
+        PackageManager::from_config(config).context("Failed to create package manager")?;
+
+    for (crate_name, version) in cargo_deps.iter() {
+        if verbose {
+            println!("Installing {}@{}...", crate_name, version);
+        }
+
+        package_manager
+            .install_package(crate_name, version, verbose)
+            .with_context(|| format!("Failed to install crate {}@{}", crate_name, version))?;
+
+        let package_info = super::lockfile::PackageInfo {
+            version: version.clone(),
+            resolved: format!(
+                "https://crates.io/api/v1/crates/{}/{}/download",
+                crate_name, version
+            ),
+            hash: "sha256-placeholder".to_string(),
+        };
+        lockfile.add_package(crate_name, package_info)?;
+
+        pb.inc(1);
+    }
+
+    pb.finish_and_clear();
+    println!("{} All crates installed successfully", "Done".green());
 
     lockfile.save().context("Failed to save hermit.lock")?;
     Ok(())
