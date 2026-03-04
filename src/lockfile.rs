@@ -15,7 +15,7 @@ pub struct PackageInfo {
 }
 
 impl Lockfile {
-    pub fn load() -> Result<<Self, anyhow::Error> {
+    pub fn load() -> Result<Self, anyhow::Error> {
         let lockfile_path = PathBuf::from("hermit.lock");
         if !lockfile_path.exists() {
             return Ok(Lockfile {
@@ -25,7 +25,7 @@ impl Lockfile {
 
         let lockfile_content = std::fs::read_to_string(lockfile_path)?;
         let lockfile: Lockfile = toml::from_str(&lockfile_content)?;
-        
+
         Ok(lockfile)
     }
 
@@ -56,10 +56,10 @@ mod tests {
     fn test_lockfile_load() -> Result<(), anyhow::Error> {
         let mut file = NamedTempFile::new()?;
         writeln!(file, "[packages.react]\nversion = \"18.3.0\"\nresolved = \"https://registry.npmjs.org/react/-/react-18.3.0.tgz\"\nhash = \"sha512-zB7H3n/n6/aJmmAf+K6tKD5B2j9HoDuLdpTHxqSPTONM4qWBnECbgGNjbhyMbf3HoHa/zDxFBfHnIqGxnFjA==\"")?;
-        
+
         let lockfile = Lockfile::load()?;
         assert!(lockfile.packages.contains_key("react"));
-        
+
         Ok(())
     }
 
@@ -68,16 +68,16 @@ mod tests {
         let mut lockfile = Lockfile {
             packages: HashMap::new(),
         };
-        
+
         let package_info = PackageInfo {
             version: "18.3.0".to_string(),
             resolved: "https://registry.npmjs.org/react/-/react-18.3.0.tgz".to_string(),
             hash: "sha512-zB7H3n/n6/aJmmAf+K6tKD5B2j9HoDuLdpTHxqSPTONM4qWBnECbgGNjbhyMbf3HoHa/zDxFBfHnIqGxnFjA==".to_string(),
         };
-        
+
         lockfile.add_package("react", package_info)?;
         assert!(lockfile.packages.contains_key("react"));
-        
+
         Ok(())
     }
 
@@ -86,16 +86,16 @@ mod tests {
         let mut lockfile = Lockfile {
             packages: HashMap::new(),
         };
-        
+
         let package_info = PackageInfo {
             version: "18.3.0".to_string(),
             resolved: "https://registry.npmjs.org/react/-/react-18.3.0.tgz".to_string(),
             hash: "sha512-zB7H3n/n6/aJmmAf+K6tKD5B2j9HoDuLdpTHxqSPTONM4qWBnECbgGNjbhyMbf3HoHa/zDxFBfHnIqGxnFjA==".to_string(),
         };
-        
+
         lockfile.add_package("react", package_info)?;
         assert!(lockfile.get_package("react").is_some());
-        
+
         Ok(())
     }
 }
