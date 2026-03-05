@@ -225,14 +225,13 @@ fn lock(verbose: bool) -> Result<()> {
     let config = Config::load().context("Failed to load .hermit config")?;
     let mut lockfile = Lockfile::load().context("Failed to load hermit.lock")?;
 
-    // Handle Cargo specially - read from Cargo.toml only if .hermit has no packages
-    let packages: Vec<(String, String)> =
-        if config.manager.to_lowercase() == "cargo" && config.packages.is_empty() {
-            let cargo_manifest = CargoManifest::load().context("Failed to load Cargo.toml")?;
-            cargo_manifest.get_all_dependencies().into_iter().collect()
-        } else {
-            config.packages.clone().into_iter().collect()
-        };
+    // Handle Cargo specially - read from Cargo.toml
+    let packages: Vec<(String, String)> = if config.manager.to_lowercase() == "cargo" {
+        let cargo_manifest = CargoManifest::load().context("Failed to load Cargo.toml")?;
+        cargo_manifest.get_all_dependencies().into_iter().collect()
+    } else {
+        config.packages.clone().into_iter().collect()
+    };
 
     if verbose {
         println!(
@@ -280,14 +279,13 @@ fn check(verbose: bool) -> Result<()> {
     let package_manager =
         PackageManager::from_config(&config).context("Failed to create package manager")?;
 
-    // Handle Cargo specially - read from Cargo.toml only if .hermit has no packages
-    let packages: Vec<(String, String)> =
-        if config.manager.to_lowercase() == "cargo" && config.packages.is_empty() {
-            let cargo_manifest = CargoManifest::load().context("Failed to load Cargo.toml")?;
-            cargo_manifest.get_all_dependencies().into_iter().collect()
-        } else {
-            config.packages.clone().into_iter().collect()
-        };
+    // Handle Cargo specially - read from Cargo.toml
+    let packages: Vec<(String, String)> = if config.manager.to_lowercase() == "cargo" {
+        let cargo_manifest = CargoManifest::load().context("Failed to load Cargo.toml")?;
+        cargo_manifest.get_all_dependencies().into_iter().collect()
+    } else {
+        config.packages.clone().into_iter().collect()
+    };
 
     if verbose {
         println!(
