@@ -1,4 +1,4 @@
-use crate::cargo::CargoManifest;
+use crate::cargo::{compute_crate_hash, CargoManifest};
 use crate::config::Config;
 use crate::lockfile::Lockfile;
 use crate::manager::PackageManager;
@@ -162,13 +162,15 @@ fn sync_cargo(config: &Config, lockfile: &mut Lockfile, verbose: bool) -> Result
     }
 
     for (crate_name, version) in cargo_deps.iter() {
+        let hash = compute_crate_hash(crate_name, version, verbose);
+
         let package_info = super::lockfile::PackageInfo {
             version: version.clone(),
             resolved: format!(
                 "https://crates.io/api/v1/crates/{}/{}/download",
                 crate_name, version
             ),
-            hash: "sha256-placeholder".to_string(),
+            hash,
         };
         lockfile.add_package(crate_name, package_info)?;
     }
@@ -255,14 +257,17 @@ fn lock(verbose: bool) -> Result<()> {
         } else {
             format!("https://registry.npmjs.org/{}/-/{}.tgz", package, package)
         };
+
+        let hash = if config.manager.to_lowercase() == "cargo" {
+            compute_crate_hash(package, version, verbose)
+        } else {
+            "sha512-placeholder".to_string()
+        };
+
         let package_info = super::lockfile::PackageInfo {
             version: version.clone(),
             resolved: resolved_url,
-            hash: if config.manager.to_lowercase() == "cargo" {
-                "sha256-placeholder".to_string()
-            } else {
-                "sha512-placeholder".to_string()
-            },
+            hash,
         };
         lockfile.add_package(package, package_info)?;
     }

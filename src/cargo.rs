@@ -37,13 +37,11 @@ where
         for (key, val) in table {
             let version = match val {
                 toml::Value::String(s) => s,
-                toml::Value::Table(t) => {
-                    // Extract version from table like { version = "x.y.z", features = [...] }
-                    t.get("version")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .unwrap_or_else(|| "*".to_string())
-                }
+                toml::Value::Table(t) => t
+                    .get("version")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| "*".to_string()),
                 _ => "*".to_string(),
             };
             deps.insert(key, version);
@@ -78,6 +76,126 @@ impl CargoManifest {
     }
 }
 
+pub fn compute_sha256(path: &std::path::Path) -> Result<String, anyhow::Error> {
+    use sha2::{Digest, Sha256};
+
+    if path.is_file() {
+        return compute_sha256_file(path);
+    }
+
+    if path.is_dir() {
+        return compute_sha256_dir(path);
+    }
+
+    Err(anyhow::anyhow!(
+        "Path is neither file nor directory: {:?}",
+        path
+    ))
+}
+
+fn compute_sha256_file(path: &std::path::Path) -> Result<String, anyhow::Error> {
+    use sha2::{Digest, Sha256};
+    use std::fs::File;
+    use std::io::Read;
+
+    let mut file = File::open(path)?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0; 8192];
+
+    loop {
+        let bytes_read = file.read(&mut buffer)?;
+        if bytes_read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..bytes_read]);
+    }
+
+    let result = hasher.finalize();
+    Ok(format!("sha256:{}", hex::encode(result)))
+}
+
+fn compute_sha256_dir(dir_path: &std::path::Path) -> Result<String, anyhow::Error> {
+    use sha2::{Digest, Sha256};
+
+    let mut hasher = Sha256::new();
+
+    let mut entries: Vec<_> = std::fs::read_dir(dir_path)?
+        .filter_map(|e| e.ok())
+        .collect();
+
+    entries.sort_by_key(|e| e.file_name());
+
+    for entry in entries {
+        let path = entry.path();
+        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
+        hasher.update(file_name.as_bytes());
+
+        if path.is_file() {
+            let content = std::fs::read(&path)?;
+            hasher.update(&content);
+        }
+    }
+
+    let result = hasher.finalize();
+    Ok(format!("sha256:{}", hex::encode(result)))
+}
+
+pub fn find_crate_in_registry(crate_name: &str, version: &str) -> Option<PathBuf> {
+    let home = std::env::var("HOME").ok()?;
+
+    let cache_path = PathBuf::from(&home)
+        .join(".cargo")
+        .join("registry")
+        .join("cache")
+        .join("index.crates.io-1949cf8c6b5b557f");
+
+    if cache_path.exists() {
+        let crate_file = cache_path.join(format!("{}-{}.crate", crate_name, version));
+        if crate_file.exists() {
+            return Some(crate_file);
+        }
+    }
+
+    let src_path = PathBuf::from(&home)
+        .join(".cargo")
+        .join("registry")
+        .join("src")
+        .join("index.crates.io-1949cf8c6b5b557f");
+
+    if src_path.exists() {
+        let crate_dir = src_path.join(format!("{}-{}", crate_name, version));
+        if crate_dir.exists() {
+            return Some(crate_dir);
+        }
+    }
+
+    None
+}
+
+pub fn compute_crate_hash(crate_name: &str, version: &str, verbose: bool) -> String {
+    if let Some(crate_path) = find_crate_in_registry(crate_name, version) {
+        if verbose {
+            println!(
+                "Computing hash for {}-{} from {:?}...",
+                crate_name, version, crate_path
+            );
+        }
+        if let Ok(hash) = compute_sha256(&crate_path) {
+            return hash;
+        }
+    }
+
+    if verbose {
+        println!("Could not find crate in registry, using placeholder hash");
+    }
+
+    format!(
+        "sha256:{}",
+        "0000000000000000000000000000000000000000000000000000000000000000"
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,7 +219,6 @@ mod tests {
 
     #[test]
     fn test_cargo_manifest_with_table_deps() -> Result<(), anyhow::Error> {
-        // This test should work now with the custom deserializer
         let content = r#"
 [package]
 name = "test"
