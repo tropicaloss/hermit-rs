@@ -8,55 +8,14 @@ mod error;
 mod lockfile;
 mod manager;
 
+use cli::Commands;
+
 #[derive(Parser)]
 #[command(name = "hermit")]
 #[command(bin_name = "hermit")]
 pub struct Cli {
     #[command(subcommand)]
     command: Commands,
-}
-
-#[derive(Parser)]
-pub enum Commands {
-    /// Install all packages across all managers
-    Sync {
-        /// Enable verbose output
-        #[arg(short, long)]
-        verbose: bool,
-    },
-    /// Add a package to .hermit
-    Add {
-        package: String,
-        version: String,
-        /// Enable verbose output
-        #[arg(short, long)]
-        verbose: bool,
-    },
-    /// Remove a package from .hermit
-    Remove {
-        package: String,
-        /// Enable verbose output
-        #[arg(short, long)]
-        verbose: bool,
-    },
-    /// Regenerate hermit.lock without installing
-    Lock {
-        /// Enable verbose output
-        #[arg(short, long)]
-        verbose: bool,
-    },
-    /// Verify installed versions match hermit.lock
-    Check {
-        /// Enable verbose output
-        #[arg(short, long)]
-        verbose: bool,
-    },
-    /// Remove all hermit-managed installs
-    Clean {
-        /// Enable verbose output
-        #[arg(short, long)]
-        verbose: bool,
-    },
 }
 
 fn main() {

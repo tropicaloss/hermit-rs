@@ -2,11 +2,54 @@ use crate::cargo::CargoManifest;
 use crate::config::Config;
 use crate::lockfile::Lockfile;
 use crate::manager::PackageManager;
-use crate::Commands;
 use anyhow::{Context, Result};
+use clap::Parser;
 use colored::Colorize;
 use std::path::PathBuf;
 use std::time::Duration;
+
+#[derive(Parser)]
+pub enum Commands {
+    /// Install all packages across all managers
+    Sync {
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
+    /// Add a package to .hermit
+    Add {
+        package: String,
+        version: String,
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
+    /// Remove a package from .hermit
+    Remove {
+        package: String,
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
+    /// Regenerate hermit.lock without installing
+    Lock {
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
+    /// Verify installed versions match hermit.lock
+    Check {
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
+    /// Remove all hermit-managed installs
+    Clean {
+        /// Enable verbose output
+        #[arg(short, long)]
+        verbose: bool,
+    },
+}
 
 pub fn run(command: Commands) -> Result<()> {
     match command {
