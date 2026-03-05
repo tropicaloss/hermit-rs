@@ -70,14 +70,15 @@ pub fn run(command: Commands) -> Result<()> {
 fn sync(verbose: bool) -> Result<()> {
     let config = Config::load().context("Failed to load .hermit config")?;
     let mut lockfile = Lockfile::load().context("Failed to load hermit.lock")?;
-    let package_manager =
-        PackageManager::from_config(&config).context("Failed to create package manager")?;
 
-    // Handle Cargo specially - sync with Cargo.toml only if .hermit has no packages
-    if config.manager.to_lowercase() == "cargo" && config.packages.is_empty() {
+    // Handle Cargo specially - use cargo fetch for dependencies
+    if config.manager.to_lowercase() == "cargo" {
         sync_cargo(&config, &mut lockfile, verbose)?;
         return Ok(());
     }
+
+    let package_manager =
+        PackageManager::from_config(&config).context("Failed to create package manager")?;
 
     if verbose {
         println!(
@@ -138,22 +139,29 @@ fn sync_cargo(config: &Config, lockfile: &mut Lockfile, verbose: bool) -> Result
         println!("{} Rust crates from Cargo.toml...", "Syncing".green());
     }
 
-    let pb = indicatif::ProgressBar::new(cargo_deps.len() as u64);
-    pb.set_message("Installing crates...");
-    pb.enable_steady_tick(Duration::from_millis(100));
+    if verbose {
+        println!("Running cargo fetch to download dependencies...");
+    }
 
-    let package_manager =
-        PackageManager::from_config(config).context("Failed to create package manager")?;
+    let mut command = std::process::Command::new("cargo");
+    command.arg("fetch");
+
+    if verbose {
+        println!("Command: {:?}", command);
+    }
+
+    let output = command.output().context("Failed to run cargo fetch")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("cargo fetch failed: {}", stderr));
+    }
+
+    if verbose {
+        println!("Cargo fetch completed successfully");
+    }
 
     for (crate_name, version) in cargo_deps.iter() {
-        if verbose {
-            println!("Installing {}@{}...", crate_name, version);
-        }
-
-        package_manager
-            .install_package(crate_name, version, verbose)
-            .with_context(|| format!("Failed to install crate {}@{}", crate_name, version))?;
-
         let package_info = super::lockfile::PackageInfo {
             version: version.clone(),
             resolved: format!(
@@ -163,12 +171,9 @@ fn sync_cargo(config: &Config, lockfile: &mut Lockfile, verbose: bool) -> Result
             hash: "sha256-placeholder".to_string(),
         };
         lockfile.add_package(crate_name, package_info)?;
-
-        pb.inc(1);
     }
 
-    pb.finish_and_clear();
-    println!("{} All crates installed successfully", "Done".green());
+    println!("{} All crates synced successfully", "Done".green());
 
     lockfile.save().context("Failed to save hermit.lock")?;
     Ok(())

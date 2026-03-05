@@ -76,7 +76,7 @@ impl PackageManager {
             }
             ManagerType::Cargo => {
                 let mut cmd = std::process::Command::new("cargo");
-                cmd.arg("install").arg(package);
+                cmd.arg("fetch");
                 cmd
             }
             ManagerType::Pip => {
