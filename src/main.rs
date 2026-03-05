@@ -78,6 +78,6 @@ mod tests {
     fn test_cli_parsing() {
         let args = vec!["hermit", "sync"];
         let cli = Cli::try_parse_from(args).unwrap();
-        assert!(matches!(cli.command, Commands::Sync));
+        assert!(matches!(cli.command, Commands::Sync { verbose: _ }));
     }
 }

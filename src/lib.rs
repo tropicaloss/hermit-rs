@@ -1,5 +1,15 @@
+pub mod cargo;
+pub mod cli;
+pub mod config;
+pub mod error;
+pub mod lockfile;
+pub mod manager;
+
+pub use cli::Commands;
+
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::config::Config;
     use crate::lockfile::{Lockfile, PackageInfo};
     use crate::manager::{ManagerType, PackageManager};
@@ -60,7 +70,7 @@ mod tests {
     fn test_cli_parsing() {
         use clap::CommandFactory;
 
-        let cli = crate::Cli::command();
+        let cli = super::Cli::command();
         assert!(cli.get_name() == "hermit");
 
         assert!(cli.get_subcommands().iter().any(|c| c.get_name() == "sync"));
