@@ -57,11 +57,12 @@ impl CargoManifest {
     pub fn load() -> Result<Self, anyhow::Error> {
         let cargo_path = PathBuf::from("Cargo.toml");
         if !cargo_path.exists() {
-            return Err(anyhow::anyhow!("Cargo.toml not found"));
+            return Err(anyhow::anyhow!("Cargo.toml not found in current directory"));
         }
 
         let cargo_content = std::fs::read_to_string(&cargo_path)?;
-        let manifest: CargoManifest = toml::from_str(&cargo_content)?;
+        let manifest: CargoManifest = toml::from_str(&cargo_content)
+            .map_err(|e| anyhow::anyhow!("Failed to parse Cargo.toml: {}", e))?;
 
         Ok(manifest)
     }
