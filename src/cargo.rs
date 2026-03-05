@@ -1,13 +1,17 @@
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CargoManifest {
     pub package: Option<CargoPackage>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_dependencies")]
     pub dependencies: HashMap<String, String>,
-    #[serde(default)]
+    #[serde(
+        default,
+        rename = "dev-dependencies",
+        deserialize_with = "deserialize_dependencies"
+    )]
     pub dev_dependencies: HashMap<String, String>,
 }
 
@@ -15,6 +19,38 @@ pub struct CargoManifest {
 pub struct CargoPackage {
     pub name: String,
     pub version: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DependencySpec {
+    pub version: Option<String>,
+}
+
+fn deserialize_dependencies<'de, D>(deserializer: D) -> Result<HashMap<String, String>, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    let value: toml::Value = Deserialize::deserialize(deserializer)?;
+    let mut deps = HashMap::new();
+
+    if let toml::Value::Table(table) = value {
+        for (key, val) in table {
+            let version = match val {
+                toml::Value::String(s) => s,
+                toml::Value::Table(t) => {
+                    // Extract version from table like { version = "x.y.z", features = [...] }
+                    t.get("version")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| "*".to_string())
+                }
+                _ => "*".to_string(),
+            };
+            deps.insert(key, version);
+        }
+    }
+
+    Ok(deps)
 }
 
 impl CargoManifest {
@@ -57,6 +93,28 @@ mod tests {
 
         let manifest = CargoManifest::load()?;
         assert_eq!(manifest.package.unwrap().name, "test");
+        assert_eq!(manifest.dependencies.get("toml"), Some(&"0.8".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_cargo_manifest_with_table_deps() -> Result<(), anyhow::Error> {
+        // This test should work now with the custom deserializer
+        let content = r#"
+[package]
+name = "test"
+version = "0.1.0"
+
+[dependencies]
+clap = { version = "4.5.60", features = ["derive"] }
+toml = "0.8"
+"#;
+        let manifest: CargoManifest = toml::from_str(content)?;
+        assert_eq!(
+            manifest.dependencies.get("clap"),
+            Some(&"4.5.60".to_string())
+        );
         assert_eq!(manifest.dependencies.get("toml"), Some(&"0.8".to_string()));
 
         Ok(())
