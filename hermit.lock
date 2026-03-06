@@ -1,0 +1,84 @@
+[packages.tempfile]
+version = "3.8"
+resolved = "https://crates.io/api/v1/crates/tempfile/3.8/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.serde]
+version = "1.0"
+resolved = "https://crates.io/api/v1/crates/serde/1.0/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.anyhow]
+version = "1.0"
+resolved = "https://crates.io/api/v1/crates/anyhow/1.0/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.thiserror]
+version = "1.0"
+resolved = "https://crates.io/api/v1/crates/thiserror/1.0/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.assert_cmd]
+version = "2.0"
+resolved = "https://crates.io/api/v1/crates/assert_cmd/2.0/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.semver]
+version = "1.0"
+resolved = "https://crates.io/api/v1/crates/semver/1.0/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.colored]
+version = "2.0"
+resolved = "https://crates.io/api/v1/crates/colored/2.0/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.env_logger]
+version = "0.10"
+resolved = "https://crates.io/api/v1/crates/env_logger/0.10/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.log]
+version = "0.4"
+resolved = "https://crates.io/api/v1/crates/log/0.4/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.sha2]
+version = "0.10"
+resolved = "https://crates.io/api/v1/crates/sha2/0.10/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.regex]
+version = "1.9"
+resolved = "https://crates.io/api/v1/crates/regex/1.9/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.toml]
+version = "0.8"
+resolved = "https://crates.io/api/v1/crates/toml/0.8/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.hex]
+version = "0.4"
+resolved = "https://crates.io/api/v1/crates/hex/0.4/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.predicates]
+version = "3.0"
+resolved = "https://crates.io/api/v1/crates/predicates/3.0/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.indicatif]
+version = "0.18.4"
+resolved = "https://crates.io/api/v1/crates/indicatif/0.18.4/download"
+hash = "sha256:25470f23803092da7d239834776d653104d551bc4d7eacaf31e6837854b8e9eb"
+
+[packages.serde_json]
+version = "1.0"
+resolved = "https://crates.io/api/v1/crates/serde_json/1.0/download"
+hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+[packages.clap]
+version = "4.5.60"
+resolved = "https://crates.io/api/v1/crates/clap/4.5.60/download"
+hash = "sha256:2797f34da339ce31042b27d23607e051786132987f595b02ba4f6a6dffb7030a"
