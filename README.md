@@ -8,7 +8,7 @@ A package manager management tool that unifies package management across multipl
 - **Easy package management**: Add, remove, and sync packages with simple commands
 
 ```bash
-cargo install hermit-rs
+cargo install hermit-rs && echo 'alias hermit-rs="hermit"' >> ~/.zshrc
 ```
 
 Or build from source:
