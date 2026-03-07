@@ -2,6 +2,10 @@
 name = "hermit-rs"
 version = "0.1.0"
 edition = "2021"
+authors = ["myfer <contactme.myfer@protonmail.com>", "tropical <https://github.com/tropicaloss>"]
+description = "A universal package manifest for any package manager"
+license = "MIT"
+repository = "https://github.com/tropicaloss/hermit-rs"
 
 [dependencies]
 clap = { version = "4.5.60", features = ["derive"] }
